@@ -1,0 +1,16 @@
+[
+{
+  "modid": "TeNNoX_CustomSelectionBox",
+  "name": "CustomSelectionBox",
+  "description": "Fancy Selection boxes!",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "www.minecraftforum.net/topic/1799471-/",
+  "updateUrl": "",
+  "authors": ["TeNNoX"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
