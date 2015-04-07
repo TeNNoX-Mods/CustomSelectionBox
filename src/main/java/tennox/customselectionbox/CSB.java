@@ -1,39 +1,45 @@
 package tennox.customselectionbox;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DestroyBlockProgress;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.WorldRenderer;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
+import net.minecraft.world.World;
 import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 
-import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.Mod.EventHandler;
-import cpw.mods.fml.common.SidedProxy;
-import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-
-@Mod(modid = "TeNNoX_CustomSelectionBox", name = "CustomSelectionBox", version = "1.3")
+@Mod(modid = CSB.MODID)
 public class CSB {
+	public static final String MODID = "TeNNoX_CustomSelectionBox";
+	public static final String VERSION = "1.3";
+
 	@SidedProxy(clientSide = "tennox.customselectionbox.CSBClientProxy", serverSide = "tennox.customselectionbox.CSBCommonProxy")
 	public static CSBCommonProxy proxy;
-	private static net.minecraftforge.common.config.Configuration config;
+	private static Configuration config;
 	public static Logger logger;
 	public static float red;
 	public static float green;
@@ -129,55 +135,101 @@ public class CSB {
 
 	@SubscribeEvent
 	public void onDrawBlockSelectionBox(DrawBlockHighlightEvent e) {
-		drawSelectionBox(e.player, e.target, 0, e.currentItem, e.partialTicks);
+		drawSelectionBox(e.player, e.target, e.subID, e.currentItem, e.partialTicks);
 		e.setCanceled(true);
 	}
 
-	public static void drawSelectionBox(EntityPlayer player, MovingObjectPosition block, int par3, ItemStack par4ItemStack, float par5) {
-		if (par3 == 0 && block.typeOfHit == MovingObjectType.BLOCK) {
-			float breakProgress = getBlockDamage(player, block);
-			if (disableDepthBuffer) {
-				GL11.glDisable(GL11.GL_DEPTH_TEST);
-			}
-			GL11.glEnable(GL11.GL_BLEND);
-			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+	// see RenderGlobal.drawSelectionBox
+	public static void drawSelectionBox(EntityPlayer player, MovingObjectPosition mops, int subID, ItemStack par4ItemStack, float partialTicks) {
+		World world = player.worldObj;
+		if (subID == 0 && mops.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+			// get the blockdamage progess
+			float breakProgress = getBlockDamage(player, mops);
+
+			GlStateManager.enableBlend();
+			GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
+			GlStateManager.color(0.0F, 0.0F, 0.0F, 0.4F);
 			GL11.glLineWidth(getThickness());
-			GL11.glDisable(GL11.GL_TEXTURE_2D);
-			GL11.glDepthMask(false);
-			float f1 = getOffset();
+			GlStateManager.disableTexture2D();
+			GlStateManager.depthMask(false);
+			float f1 = 0.002F;
+			BlockPos blockpos = mops.getBlockPos();
+			Block block = world.getBlockState(blockpos).getBlock();
 
-			Minecraft mc = Minecraft.getMinecraft();
-			Block b = mc.theWorld.getBlock(block.blockX, block.blockY, block.blockZ);
+			if (block.getMaterial() != Material.air && world.getWorldBorder().contains(blockpos)) {
+				block.setBlockBoundsBasedOnState(world, blockpos);
+				double d0 = player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) partialTicks;
+				double d1 = player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) partialTicks;
+				double d2 = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) partialTicks;
 
-			if (b != Blocks.air) {
-				b.setBlockBoundsBasedOnState(mc.theWorld, block.blockX, block.blockY, block.blockZ);
+				AxisAlignedBB bb = block.getSelectedBoundingBox(world, blockpos).expand(0.0020000000949949026D, 0.0020000000949949026D, 0.0020000000949949026D)
+						.offset(-d0, -d1, -d2);
 
-				double d0 = player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) par5;
-				double d1 = player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) par5;
-				double d2 = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) par5;
-
-				AxisAlignedBB bb = b.getSelectedBoundingBoxFromPool(mc.theWorld, block.blockX, block.blockY, block.blockZ).expand(f1, f1, f1).getOffsetBoundingBox(-d0, -d1, -d2);
+				// modify BB
 				if (breakAnimation == DOWN)
-					bb = bb.expand(0f, -breakProgress / 2, 0f).getOffsetBoundingBox(0f, -breakProgress / 2, 0f);
+					bb = bb.expand(0f, -breakProgress / 2, 0f).offset(0f, -breakProgress / 2, 0f);
 				if (breakAnimation == SHRINK)
 					bb = bb.expand(-breakProgress / 2, -breakProgress / 2, -breakProgress / 2);
 
+				// draw blinking block
 				if (breakAnimation == ALPHA)
-					drawBlinkingBlock(bb, breakProgress);
-				else
-					drawBlinkingBlock(bb, getBlinkAlpha());
+					drawBlinkingBlock(bb, (breakAnimation == ALPHA) ? breakProgress : getBlinkAlpha());
+
+				// set the color back to original and draw outline
 				GL11.glColor4f(getRed(), getGreen(), getBlue(), getAlpha());
-				drawOutlinedBoundingBox(bb);
-
+				drawOutlinedBoundingBox(bb, -1);
 			}
 
-			GL11.glDepthMask(true);
-			GL11.glEnable(GL11.GL_TEXTURE_2D);
-			GL11.glDisable(GL11.GL_BLEND);
-			if (disableDepthBuffer) {
-				GL11.glEnable(GL11.GL_DEPTH_TEST);
-			}
+			GlStateManager.depthMask(true);
+			GlStateManager.enableTexture2D();
+			GlStateManager.disableBlend();
 		}
+
+		// if (subID == 0 && block.typeOfHit == MovingObjectType.BLOCK) {
+		// float breakProgress = getBlockDamage(player, block);
+		// if (disableDepthBuffer) {
+		// GL11.glDisable(GL11.GL_DEPTH_TEST);
+		// }
+		// GL11.glEnable(GL11.GL_BLEND);
+		// GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		// GL11.glLineWidth(getThickness());
+		// GL11.glDisable(GL11.GL_TEXTURE_2D);
+		// GL11.glDepthMask(false);
+		// float f1 = getOffset();
+		//
+		// Minecraft mc = Minecraft.getMinecraft();
+		// Block b = mc.theWorld.getBlockState(block.getBlockPos()).getBlock();
+		//
+		// if (b != Blocks.air) {
+		// b.setBlockBoundsBasedOnState(mc.theWorld, block.getBlockPos());
+		//
+		// double d0 = player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) par5;
+		// double d1 = player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) par5;
+		// double d2 = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) par5;
+		//
+		// AxisAlignedBB bb = b.getSelectedBoundingBoxFromPool(mc.theWorld, block.getBlockPos()).expand(f1, f1, f1).getOffsetBoundingBox(-d0, -d1,
+		// -d2);
+		// if (breakAnimation == DOWN)
+		// bb = bb.expand(0f, -breakProgress / 2, 0f).getOffsetBoundingBox(0f, -breakProgress / 2, 0f);
+		// if (breakAnimation == SHRINK)
+		// bb = bb.expand(-breakProgress / 2, -breakProgress / 2, -breakProgress / 2);
+		//
+		// if (breakAnimation == ALPHA)
+		// drawBlinkingBlock(bb, breakProgress);
+		// else
+		// drawBlinkingBlock(bb, getBlinkAlpha());
+		// GL11.glColor4f(getRed(), getGreen(), getBlue(), getAlpha());
+		// drawOutlinedBoundingBox(bb);
+		//
+		// }
+		//
+		// GL11.glDepthMask(true);
+		// GL11.glEnable(GL11.GL_TEXTURE_2D);
+		// GL11.glDisable(GL11.GL_BLEND);
+		// if (disableDepthBuffer) {
+		// GL11.glEnable(GL11.GL_DEPTH_TEST);
+		// }
+		// }
 	}
 
 	private static float getBlockDamage(EntityPlayer player, MovingObjectPosition block) {
@@ -192,7 +244,7 @@ public class CSB {
 			HashMap<Integer, DestroyBlockProgress> map = (HashMap<Integer, DestroyBlockProgress>) f.get(Minecraft.getMinecraft().renderGlobal);
 			for (Entry<Integer, DestroyBlockProgress> entry : map.entrySet()) {
 				DestroyBlockProgress prg = entry.getValue();
-				if (prg.getPartialBlockX() == block.blockX && prg.getPartialBlockY() == block.blockY && prg.getPartialBlockZ() == block.blockZ) {
+				if (prg.getPosition().equals(block.getBlockPos())) {
 					if (prg.getPartialBlockDamage() >= 0 && prg.getPartialBlockDamage() <= 10)
 						return prg.getPartialBlockDamage() / 10f;
 				}
@@ -203,36 +255,78 @@ public class CSB {
 		return 0f;
 	}
 
-	private static void drawOutlinedBoundingBox(AxisAlignedBB par1AxisAlignedBB) {
-		Tessellator tessellator = Tessellator.instance;
-		tessellator.startDrawing(3);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+	private static void drawOutlinedBoundingBox(AxisAlignedBB boundingBox, int color) {
+		Tessellator tessellator = Tessellator.getInstance();
+		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+		worldrenderer.startDrawing(3);
+
+		if (color != -1) {
+			worldrenderer.setColorOpaque_I(color);
+		}
+
+		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.minZ);
+		worldrenderer.addVertex(boundingBox.maxX, boundingBox.minY, boundingBox.minZ);
+		worldrenderer.addVertex(boundingBox.maxX, boundingBox.minY, boundingBox.maxZ);
+		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.maxZ);
+		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.minZ);
 		tessellator.draw();
-		tessellator.startDrawing(3);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		worldrenderer.startDrawing(3);
+
+		if (color != -1) {
+			worldrenderer.setColorOpaque_I(color);
+		}
+
+		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.minZ);
+		worldrenderer.addVertex(boundingBox.maxX, boundingBox.maxY, boundingBox.minZ);
+		worldrenderer.addVertex(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ);
+		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.maxZ);
+		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.minZ);
 		tessellator.draw();
-		tessellator.startDrawing(1);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		worldrenderer.startDrawing(1);
+
+		if (color != -1) {
+			worldrenderer.setColorOpaque_I(color);
+		}
+
+		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.minZ);
+		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.minZ);
+		worldrenderer.addVertex(boundingBox.maxX, boundingBox.minY, boundingBox.minZ);
+		worldrenderer.addVertex(boundingBox.maxX, boundingBox.maxY, boundingBox.minZ);
+		worldrenderer.addVertex(boundingBox.maxX, boundingBox.minY, boundingBox.maxZ);
+		worldrenderer.addVertex(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ);
+		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.maxZ);
+		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.maxZ);
 		tessellator.draw();
+
+		// Tessellator tessellator = Tessellator.instance;
+		// tessellator.startDrawing(3);
+		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		// tessellator.draw();
+		// tessellator.startDrawing(3);
+		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		// tessellator.draw();
+		// tessellator.startDrawing(1);
+		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		// tessellator.draw();
 	}
 
 	private static void drawBlinkingBlock(AxisAlignedBB par1AxisAlignedBB, float alpha) {
-		Tessellator tessellator = Tessellator.instance;
+		Tessellator tessellator = Tessellator.getInstance();
 
 		if (alpha > 0.0F) {
 			if (getBlinkSpeed() > 0 && CSB.breakAnimation != ALPHA)
@@ -249,75 +343,81 @@ public class CSB {
 	}
 
 	public static void renderUp(AxisAlignedBB par1AxisAlignedBB) {
-		Tessellator tessellator = Tessellator.instance;
+		Tessellator tessellator = Tessellator.getInstance();
+		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		tessellator.startDrawingQuads();
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.startDrawingQuads();
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
 		tessellator.draw();
 	}
 
 	public static void renderDown(AxisAlignedBB par1AxisAlignedBB) {
-		Tessellator tessellator = Tessellator.instance;
+		Tessellator tessellator = Tessellator.getInstance();
+		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		tessellator.startDrawingQuads();
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		worldrenderer.startDrawingQuads();
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
 
 		tessellator.draw();
 	}
 
 	public static void renderNorth(AxisAlignedBB par1AxisAlignedBB) {
-		Tessellator tessellator = Tessellator.instance;
+		Tessellator tessellator = Tessellator.getInstance();
+		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		tessellator.startDrawingQuads();
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.startDrawingQuads();
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
 		tessellator.draw();
 	}
 
 	public static void renderSouth(AxisAlignedBB par1AxisAlignedBB) {
-		Tessellator tessellator = Tessellator.instance;
+		Tessellator tessellator = Tessellator.getInstance();
+		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		tessellator.startDrawingQuads();
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		worldrenderer.startDrawingQuads();
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
 		tessellator.draw();
 	}
 
 	public static void renderWest(AxisAlignedBB par1AxisAlignedBB) {
-		Tessellator tessellator = Tessellator.instance;
+		Tessellator tessellator = Tessellator.getInstance();
+		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		tessellator.startDrawingQuads();
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.startDrawingQuads();
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
 		tessellator.draw();
 	}
 
 	public static void renderEast(AxisAlignedBB par1AxisAlignedBB) {
-		Tessellator tessellator = Tessellator.instance;
+		Tessellator tessellator = Tessellator.getInstance();
+		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		tessellator.startDrawingQuads();
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.startDrawingQuads();
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
 		tessellator.draw();
 	}
 
