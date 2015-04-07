@@ -62,7 +62,7 @@ public class CSBSettingsGUI extends GuiScreen {
 			CSB.disableDepthBuffer = !CSB.disableDepthBuffer;
 			button.displayString = "Disable Depth: " + (CSB.disableDepthBuffer ? "ON" : "OFF");
 		} else if (button.id == 10) {
-			CSB.setBreakAnimation(CSB.breakAnimation == CSB.LASTANIMATION ? 0 : CSB.breakAnimation + 1);
+			CSB.setBreakAnimation(CSB.breakAnimation == CSB.LASTANIMATION_INDEX ? 0 : CSB.breakAnimation + 1);
 
 			button.displayString = "Break Animation: " + getBreakAnimationName();
 		}
