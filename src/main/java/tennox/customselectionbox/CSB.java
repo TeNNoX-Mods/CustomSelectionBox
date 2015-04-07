@@ -32,10 +32,10 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 
-@Mod(modid = CSB.MODID)
+@Mod(modid = CSB.MODID, version = CSB.VERSION)
 public class CSB {
 	public static final String MODID = "TeNNoX_CustomSelectionBox";
-	public static final String VERSION = "1.3";
+	public static final String VERSION = "1.4";
 
 	@SidedProxy(clientSide = "tennox.customselectionbox.CSBClientProxy", serverSide = "tennox.customselectionbox.CSBCommonProxy")
 	public static CSBCommonProxy proxy;
