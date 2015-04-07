@@ -9,10 +9,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiOptions;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraftforge.common.MinecraftForge;
-import cpw.mods.fml.common.FMLCommonHandler;
-import cpw.mods.fml.common.eventhandler.SubscribeEvent;
-import cpw.mods.fml.common.gameevent.TickEvent;
-import cpw.mods.fml.relauncher.Side;
+import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.relauncher.Side;
 
 public class CSBClientProxy extends CSBCommonProxy {
 	public void registerTickHandler() {
@@ -42,8 +42,8 @@ public class CSBClientProxy extends CSBCommonProxy {
 				}
 				if (CSB.diffButtonLoc)
 					buttons.add(new CSBButton(404, gui.width - 150, 0, 150, 20, "Custom Selection Box"));
-				else
-					buttons.add(new CSBButton(404, gui.width / 2 + 2, gui.height / 6 + 42, 150, 20, "Custom Selection Box"));
+				else  // see GuiOptions.initGui
+					buttons.add(new CSBButton(404, gui.width / 2 - 75, gui.height / 6 + 24 - 6, 150, 20, "Custom Selection Box"));
 			}
 		}
 	}

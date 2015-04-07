@@ -86,9 +86,6 @@ public class CSBSlider extends GuiButton {
 		case 5:
 			CSB.setThickness(this.sliderValue * 7.0F);
 			break;
-		case 6:
-			CSB.setOffset(this.sliderValue);
-			break;
 		case 7:
 			CSB.setBlinkAlpha(this.sliderValue);
 			break;
@@ -109,12 +106,10 @@ public class CSBSlider extends GuiButton {
 			return "Alpha: " + Math.round(this.sliderValue * 255.0F);
 		case 5:
 			return "Thickness: " + Math.round(this.sliderValue * 7.0F);
-		case 6:
-			return "Offset: " + Math.round(this.sliderValue * 100.0F);
 		case 7:
-			return "Alpha: " + Math.round(this.sliderValue * 255.0F);
+			return "Blink Alpha: " + Math.round(this.sliderValue * 255.0F);
 		case 8:
-			return "Speed: " + Math.round(this.sliderValue * 100.0F);
+			return "Blink Speed: " + Math.round(this.sliderValue * 100.0F);
 		}
 		return "option error?! (" + id + ")";
 	}
