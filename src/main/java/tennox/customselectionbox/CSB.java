@@ -146,6 +146,11 @@ public class CSB {
 			// get the blockdamage progess
 			float breakProgress = getBlockDamage(player, mops);
 
+			// maybe disable depth buffer
+			if (disableDepthBuffer) {
+				GL11.glDisable(GL11.GL_DEPTH_TEST);
+			}
+
 			GlStateManager.enableBlend();
 			GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
 			GlStateManager.color(0.0F, 0.0F, 0.0F, 0.4F);
@@ -183,6 +188,11 @@ public class CSB {
 			GlStateManager.depthMask(true);
 			GlStateManager.enableTexture2D();
 			GlStateManager.disableBlend();
+
+			// renable depth
+			if (disableDepthBuffer) {
+				GL11.glEnable(GL11.GL_DEPTH_TEST);
+			}
 		}
 
 		// if (subID == 0 && block.typeOfHit == MovingObjectType.BLOCK) {

@@ -42,8 +42,8 @@ public class CSBClientProxy extends CSBCommonProxy {
 				}
 				if (CSB.diffButtonLoc)
 					buttons.add(new CSBButton(404, gui.width - 150, 0, 150, 20, "Custom Selection Box"));
-				else
-					buttons.add(new CSBButton(404, gui.width / 2 + 2, gui.height / 6 + 42, 150, 20, "Custom Selection Box"));
+				else  // see GuiOptions.initGui
+					buttons.add(new CSBButton(404, gui.width / 2 - 75, gui.height / 6 + 24 - 6, 150, 20, "Custom Selection Box"));
 			}
 		}
 	}
