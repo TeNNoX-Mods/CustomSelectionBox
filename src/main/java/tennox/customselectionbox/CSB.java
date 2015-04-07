@@ -46,7 +46,6 @@ public class CSB {
 	public static float blue;
 	public static float alpha;
 	public static float thickness;
-	public static float offset;
 	public static float blinkalpha;
 	public static float blinkspeed;
 	public static boolean diffButtonLoc;
@@ -72,7 +71,6 @@ public class CSB {
 		int b = config.get("general", "blue", 0).getInt();
 		int a = config.get("general", "alpha", 255).getInt();
 		int t = config.get("general", "thickness", 4).getInt();
-		int o = config.get("general", "offset", 4).getInt();
 		int ba = config.get("general", "blink_alpha", 100).getInt();
 		int bs = config.get("general", "blink_speed", 30).getInt();
 		diffButtonLoc = config.get("general", "different config button location", false).getBoolean(false);
@@ -85,13 +83,12 @@ public class CSB {
 		setBlue(b / 255.0F);
 		setAlpha(a / 255.0F);
 		setThickness(t);
-		setOffset(o / 1000.0F);
 		setBlinkAlpha(ba / 255.0F);
 		setBlinkSpeed(bs / 100.0F);
 		setBreakAnimation(bra);
 
 		logger.info("red=" + getRed() + " green=" + getGreen() + " blue=" + getBlue() + " alpha=" + getAlpha());
-		logger.info("thickness=" + getThickness() + " offset=" + getOffset() + " diffbuttonloc=" + diffButtonLoc);
+		logger.info("thickness=" + getThickness() + " diffbuttonloc=" + diffButtonLoc);
 		logger.info("blinkalpha=" + getBlinkAlpha() + " blinkspeed=" + getBlinkSpeed());
 	}
 
@@ -102,15 +99,13 @@ public class CSB {
 		config.get("general", "blue", 0).set(getBlueInt());
 		config.get("general", "alpha", 255).set(getAlphaInt());
 		config.get("general", "thickness", 4).set(getThicknessInt());
-		config.get("general", "offset", 4).set(getOffsetInt());
 		config.get("general", "blink_alpha", 100).set(getBlinkAlphaInt());
 		config.get("general", "blink_speed", 30).set(getBlinkSpeedInt());
 		config.get("general", "disable_depth", false).set(disableDepthBuffer);
 		config.get("general", "break_animation", 0).set(breakAnimation);
 		config.save();
 		logger.info("SAVED: red=" + getRed() + " green=" + getGreen() + " blue=" + getBlue() + " alpha=" + getAlpha());
-		logger.info("SAVED: thickness=" + getThickness() + " offset=" + getOffset());
-		logger.info("SAVED: blinkalpha=" + getBlinkAlpha() + " blinkspeed=" + getBlinkSpeed());
+		logger.info("SAVED: thickness=" + getThickness() + " blinkalpha=" + getBlinkAlpha() + " blinkspeed=" + getBlinkSpeed());
 	}
 
 	public static void reset(boolean mc) {
@@ -119,7 +114,6 @@ public class CSB {
 		setBlue(0.0F);
 		setAlpha(mc ? 0.4F : 1.0F);
 		setThickness(mc ? 2.0F : 4.0F);
-		setOffset(mc ? 0.002F : 0.004F);
 		setBlinkAlpha(mc ? 0.0F : 0.390625F);
 		setBlinkSpeed(0.2F);
 		disableDepthBuffer = false;
@@ -177,8 +171,7 @@ public class CSB {
 					bb = bb.expand(-breakProgress / 2, -breakProgress / 2, -breakProgress / 2);
 
 				// draw blinking block
-				if (breakAnimation == ALPHA)
-					drawBlinkingBlock(bb, (breakAnimation == ALPHA) ? breakProgress : getBlinkAlpha());
+				drawBlinkingBlock(bb, (breakAnimation == ALPHA) ? breakProgress : getBlinkAlpha());
 
 				// set the color back to original and draw outline
 				GL11.glColor4f(getRed(), getGreen(), getBlue(), getAlpha());
@@ -194,52 +187,6 @@ public class CSB {
 				GL11.glEnable(GL11.GL_DEPTH_TEST);
 			}
 		}
-
-		// if (subID == 0 && block.typeOfHit == MovingObjectType.BLOCK) {
-		// float breakProgress = getBlockDamage(player, block);
-		// if (disableDepthBuffer) {
-		// GL11.glDisable(GL11.GL_DEPTH_TEST);
-		// }
-		// GL11.glEnable(GL11.GL_BLEND);
-		// GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-		// GL11.glLineWidth(getThickness());
-		// GL11.glDisable(GL11.GL_TEXTURE_2D);
-		// GL11.glDepthMask(false);
-		// float f1 = getOffset();
-		//
-		// Minecraft mc = Minecraft.getMinecraft();
-		// Block b = mc.theWorld.getBlockState(block.getBlockPos()).getBlock();
-		//
-		// if (b != Blocks.air) {
-		// b.setBlockBoundsBasedOnState(mc.theWorld, block.getBlockPos());
-		//
-		// double d0 = player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) par5;
-		// double d1 = player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) par5;
-		// double d2 = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) par5;
-		//
-		// AxisAlignedBB bb = b.getSelectedBoundingBoxFromPool(mc.theWorld, block.getBlockPos()).expand(f1, f1, f1).getOffsetBoundingBox(-d0, -d1,
-		// -d2);
-		// if (breakAnimation == DOWN)
-		// bb = bb.expand(0f, -breakProgress / 2, 0f).getOffsetBoundingBox(0f, -breakProgress / 2, 0f);
-		// if (breakAnimation == SHRINK)
-		// bb = bb.expand(-breakProgress / 2, -breakProgress / 2, -breakProgress / 2);
-		//
-		// if (breakAnimation == ALPHA)
-		// drawBlinkingBlock(bb, breakProgress);
-		// else
-		// drawBlinkingBlock(bb, getBlinkAlpha());
-		// GL11.glColor4f(getRed(), getGreen(), getBlue(), getAlpha());
-		// drawOutlinedBoundingBox(bb);
-		//
-		// }
-		//
-		// GL11.glDepthMask(true);
-		// GL11.glEnable(GL11.GL_TEXTURE_2D);
-		// GL11.glDisable(GL11.GL_BLEND);
-		// if (disableDepthBuffer) {
-		// GL11.glEnable(GL11.GL_DEPTH_TEST);
-		// }
-		// }
 	}
 
 	private static float getBlockDamage(EntityPlayer player, MovingObjectPosition block) {
@@ -307,32 +254,6 @@ public class CSB {
 		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.maxZ);
 		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.maxZ);
 		tessellator.draw();
-
-		// Tessellator tessellator = Tessellator.instance;
-		// tessellator.startDrawing(3);
-		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		// tessellator.draw();
-		// tessellator.startDrawing(3);
-		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		// tessellator.draw();
-		// tessellator.startDrawing(1);
-		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		// tessellator.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		// tessellator.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		// tessellator.draw();
 	}
 
 	private static void drawBlinkingBlock(AxisAlignedBB par1AxisAlignedBB, float alpha) {
@@ -454,10 +375,6 @@ public class CSB {
 		return between(thickness, 0.1F, 7.0F);
 	}
 
-	public static float getOffset() {
-		return between(offset, 0.0F, 1.0F);
-	}
-
 	public static float getBlinkAlpha() {
 		return between(blinkalpha, 0.0F, 1.0F);
 	}
@@ -484,10 +401,6 @@ public class CSB {
 
 	public static void setThickness(float t) {
 		thickness = between(t, 0.1F, 7.0F);
-	}
-
-	public static void setOffset(float o) {
-		offset = between(o, 0.002F, 1.0F);
 	}
 
 	public static void setBlinkAlpha(float ba) {
@@ -520,10 +433,6 @@ public class CSB {
 
 	public static int getThicknessInt() {
 		return Math.round(getThickness());
-	}
-
-	public static int getOffsetInt() {
-		return Math.round(getOffset() * 1000.0F);
 	}
 
 	public static int getBlinkAlphaInt() {
