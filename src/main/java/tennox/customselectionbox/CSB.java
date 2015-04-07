@@ -32,10 +32,10 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 
-@Mod(modid = CSB.MODID)
+@Mod(modid = CSB.MODID, version = CSB.VERSION)
 public class CSB {
 	public static final String MODID = "TeNNoX_CustomSelectionBox";
-	public static final String VERSION = "1.3";
+	public static final String VERSION = "1.4";
 
 	@SidedProxy(clientSide = "tennox.customselectionbox.CSBClientProxy", serverSide = "tennox.customselectionbox.CSBCommonProxy")
 	public static CSBCommonProxy proxy;
@@ -56,7 +56,7 @@ public class CSB {
 	public static int SHRINK = 1;
 	public static int DOWN = 2;
 	public static int ALPHA = 3;
-	public static int LASTANIMATION = 3;
+	public static int LASTANIMATION_INDEX = 3;
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
@@ -411,8 +411,8 @@ public class CSB {
 		blinkspeed = between(s, 0.0F, 1.0F);
 	}
 
-	public static void setBreakAnimation(float a) {
-		breakAnimation = (int) between(a, 0, LASTANIMATION);
+	public static void setBreakAnimation(int index) {
+		breakAnimation = between(index, 0, LASTANIMATION_INDEX);
 	}
 
 	public static int getRedInt() {
@@ -444,6 +444,14 @@ public class CSB {
 	}
 
 	private static float between(float i, float x, float y) {
+		if (i < x)
+			i = x;
+		if (i > y)
+			i = y;
+		return i;
+	}
+
+	private static int between(int i, int x, int y) {
 		if (i < x)
 			i = x;
 		if (i > y)
