@@ -26,7 +26,7 @@ public class CSBSettingsGUI extends GuiScreen {
 		this.buttonList.add(new CSBSlider(5, 4, this.height / 2 + 34, CSB.getThickness() / 7.0F));
 
 		// right
-		this.buttonList.add(new CSBButton(9, this.width - 154, this.height / 2 - 52, 150, 20, "Disable Depth: " + (CSB.disableDepthBuffer ? "on" : "off")));
+		this.buttonList.add(new CSBButton(9, this.width - 154, this.height / 2 - 52, 150, 20, "Disable Depth: " + (CSB.disableDepthBuffer ? "ON" : "OFF")));
 		this.buttonList.add(new CSBButton(10, this.width - 154, this.height / 2 - 30, 150, 20, "Break Animation: " + getBreakAnimationName()));
 		this.buttonList.add(new CSBSlider(7, this.width - 154, this.height / 2 + 2, CSB.getBlinkAlpha()));
 		this.buttonList.add(new CSBSlider(8, this.width - 154, this.height / 2 + 26, CSB.getBlinkSpeed()));
@@ -60,7 +60,7 @@ public class CSBSettingsGUI extends GuiScreen {
 			initGui();
 		} else if (button.id == 9) {
 			CSB.disableDepthBuffer = !CSB.disableDepthBuffer;
-			button.displayString = "Disable Depth: " + (CSB.disableDepthBuffer ? "on" : "off");
+			button.displayString = "Disable Depth: " + (CSB.disableDepthBuffer ? "ON" : "OFF");
 		} else if (button.id == 10) {
 			CSB.setBreakAnimation(CSB.breakAnimation == CSB.LASTANIMATION ? 0 : CSB.breakAnimation + 1);
 
