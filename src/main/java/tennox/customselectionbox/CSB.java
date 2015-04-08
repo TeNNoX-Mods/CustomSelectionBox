@@ -17,8 +17,8 @@ import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -136,6 +136,7 @@ public class CSB {
 	// see RenderGlobal.drawSelectionBox
 	public static void drawSelectionBox(EntityPlayer player, MovingObjectPosition mops, int subID, ItemStack par4ItemStack, float partialTicks) {
 		World world = player.worldObj;
+
 		if (subID == 0 && mops.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
 			// get the blockdamage progess
 			float breakProgress = getBlockDamage(player, mops);
@@ -176,6 +177,17 @@ public class CSB {
 				// set the color back to original and draw outline
 				GL11.glColor4f(getRed(), getGreen(), getBlue(), getAlpha());
 				drawOutlinedBoundingBox(bb, -1);
+
+				// draw the blockplace indicator //
+				if (true) {
+					bb = getCurrentBlockBB(world, player, blockpos.add(mops.sideHit.getDirectionVec()), mops.sideHit);
+
+					if (bb != null) {
+						bb = bb.expand(0.0020000000949949026D, 0.0020000000949949026D, 0.0020000000949949026D).offset(-d0, -d1, -d2);
+						GL11.glColor4f(getRed(), getGreen(), getBlue(), getAlpha() / 3);
+						drawOutlinedBoundingBox(bb, -1);
+					}
+				}
 			}
 
 			GlStateManager.depthMask(true);
@@ -187,6 +199,25 @@ public class CSB {
 				GL11.glEnable(GL11.GL_DEPTH_TEST);
 			}
 		}
+	}
+
+	private static AxisAlignedBB getCurrentBlockBB(World world, EntityPlayer player, BlockPos blockpos, EnumFacing side) {
+		ItemStack currentItem = player.inventory.getCurrentItem();
+
+		AxisAlignedBB bb;
+		if (currentItem != null && Block.getBlockFromItem(currentItem.getItem()) != null) {
+			Block inUse = Block.getBlockFromItem(currentItem.getItem());
+
+			if (!inUse.canPlaceBlockOnSide(world, blockpos, side)) {
+				return null;
+			}
+			
+			inUse.setBlockBoundsBasedOnState(world, blockpos);
+			bb = inUse.getSelectedBoundingBox(world, blockpos);
+		} else { // no block in hand
+			bb = Blocks.air.getSelectedBoundingBox(world, blockpos);
+		}
+		return bb;
 	}
 
 	private static float getBlockDamage(EntityPlayer player, MovingObjectPosition block) {
