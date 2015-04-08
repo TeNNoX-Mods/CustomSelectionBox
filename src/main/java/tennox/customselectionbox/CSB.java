@@ -5,9 +5,17 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockAnvil;
+import net.minecraft.block.BlockButton;
 import net.minecraft.block.BlockLadder;
+import net.minecraft.block.BlockLever;
+import net.minecraft.block.BlockRedstoneDiode;
 import net.minecraft.block.BlockSlab;
+import net.minecraft.block.BlockSnow;
 import net.minecraft.block.BlockTorch;
+import net.minecraft.block.BlockTrapDoor;
+import net.minecraft.block.BlockTripWireHook;
+import net.minecraft.block.BlockVine;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -226,10 +234,17 @@ public class CSB {
 			return null;
 		}
 
-		// block.setBlockBoundsBasedOnState(world, pos);
+		IBlockState state = null;
+		try {
+			state = block.onBlockPlaced(world, pos, side, (float) hitPos.xCoord, (float) hitPos.yCoord, (float) hitPos.zCoord, 0, player);
+			block.setBlockBoundsBasedOnState(world, pos);
+		} catch (Exception e) {
+			// if (!(block instanceof BlockSnow) && !(block instanceof BlockAnvil) && !(block instanceof BlockVine) && !(block instanceof BlockButton)
+			// && !(block instanceof BlockLever))
+//			 logger.catching(e);
+		}
 
 		if (block instanceof BlockLadder) { // Ladder
-			IBlockState state = block.onBlockPlaced(world, pos, side, (float) hitPos.xCoord, (float) hitPos.yCoord, (float) hitPos.zCoord, 0, player);
 			float f = 0.125F;
 			switch (((EnumFacing) state.getValue(BlockLadder.FACING))) {
 			case NORTH:
@@ -246,7 +261,6 @@ public class CSB {
 				block.setBlockBounds(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
 			}
 		} else if (block instanceof BlockTorch) { // Torch
-			IBlockState state = block.onBlockPlaced(world, pos, side, (float) hitPos.xCoord, (float) hitPos.yCoord, (float) hitPos.zCoord, 0, player);
 			float f = 0.15F;
 
 			if (side == EnumFacing.EAST) {
@@ -262,10 +276,143 @@ public class CSB {
 				block.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.6F, 0.5F + f);
 			}
 		} else if (block instanceof BlockSlab && !((BlockSlab) block).isDouble()) { // Slabs
-			IBlockState state = block.onBlockPlaced(world, pos, side, (float) hitPos.xCoord, (float) hitPos.yCoord, (float) hitPos.zCoord, 0, player);
 			if (state.getBlock() == block) {
 				boolean top = state.getValue(BlockSlab.HALF) == BlockSlab.EnumBlockHalf.TOP;
 				block.setBlockBounds(0.0F, top ? 0.5F : 0.0F, 0.0F, 1.0F, top ? 1.0F : 0.5F, 1.0F);
+			}
+		} else if (block instanceof BlockSnow) { // Snow
+			block.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1 / 8F, 1.0F);
+		} else if (block instanceof BlockAnvil) { // Anvil
+			if (player.getHorizontalFacing().rotateY().getAxis() == EnumFacing.Axis.X) {
+				block.setBlockBounds(0.0F, 0.0F, 0.125F, 1.0F, 1.0F, 0.875F);
+			} else {
+				block.setBlockBounds(0.125F, 0.0F, 0.0F, 0.875F, 1.0F, 1.0F);
+			}
+		} else if (block instanceof BlockVine) { // Vine
+			float f = 0.0625F;
+			float f1 = 1.0F;
+			float f2 = 1.0F;
+			float f3 = 1.0F;
+			float f4 = 0.0F;
+			float f5 = 0.0F;
+			float f6 = 0.0F;
+			boolean flag = false;
+			if ((Boolean) state.getValue(BlockVine.WEST)) {
+				f4 = Math.max(f4, 0.0625F);
+				f1 = 0.0F;
+				f2 = 0.0F;
+				f5 = 1.0F;
+				f3 = 0.0F;
+				f6 = 1.0F;
+				flag = true;
+			}
+			if ((Boolean) state.getValue(BlockVine.EAST)) {
+				f1 = Math.min(f1, 0.9375F);
+				f4 = 1.0F;
+				f2 = 0.0F;
+				f5 = 1.0F;
+				f3 = 0.0F;
+				f6 = 1.0F;
+				flag = true;
+			}
+			if ((Boolean) state.getValue(BlockVine.NORTH)) {
+				f6 = Math.max(f6, 0.0625F);
+				f3 = 0.0F;
+				f1 = 0.0F;
+				f4 = 1.0F;
+				f2 = 0.0F;
+				f5 = 1.0F;
+				flag = true;
+			}
+			if ((Boolean) state.getValue(BlockVine.SOUTH)) {
+				f3 = Math.min(f3, 0.9375F);
+				f6 = 1.0F;
+				f1 = 0.0F;
+				f4 = 1.0F;
+				f2 = 0.0F;
+				f5 = 1.0F;
+				flag = true;
+			}
+			Block blockAbove = world.getBlockState(pos.up()).getBlock();
+			if (!flag && blockAbove.isFullCube() && blockAbove.getMaterial().blocksMovement()) {
+				f2 = Math.min(f2, 0.9375F);
+				f5 = 1.0F;
+				f1 = 0.0F;
+				f4 = 1.0F;
+				f3 = 0.0F;
+				f6 = 1.0F;
+			}
+			block.setBlockBounds(f1, f2, f3, f4, f5, f6);
+		} else if (block instanceof BlockButton) { // Button
+			EnumFacing enumfacing = (EnumFacing) state.getValue(BlockButton.FACING);
+			boolean flag = ((Boolean) state.getValue(BlockButton.POWERED)).booleanValue();
+			float f = 0.25F;
+			float f1 = 0.375F;
+			float f2 = (float) (flag ? 1 : 2) / 16.0F;
+			float f3 = 0.125F;
+			float f4 = 0.1875F;
+			switch (enumfacing) {
+			case EAST:
+				block.setBlockBounds(0.0F, 0.375F, 0.3125F, f2, 0.625F, 0.6875F);
+				break;
+			case WEST:
+				block.setBlockBounds(1.0F - f2, 0.375F, 0.3125F, 1.0F, 0.625F, 0.6875F);
+				break;
+			case SOUTH:
+				block.setBlockBounds(0.3125F, 0.375F, 0.0F, 0.6875F, 0.625F, f2);
+				break;
+			case NORTH:
+				block.setBlockBounds(0.3125F, 0.375F, 1.0F - f2, 0.6875F, 0.625F, 1.0F);
+				break;
+			case UP:
+				block.setBlockBounds(0.3125F, 0.0F, 0.375F, 0.6875F, 0.0F + f2, 0.625F);
+				break;
+			case DOWN:
+				block.setBlockBounds(0.3125F, 1.0F - f2, 0.375F, 0.6875F, 1.0F, 0.625F);
+			}
+		} else if (block instanceof BlockLever) { // Lever
+			float f = 0.1875F;
+
+			switch (((BlockLever.EnumOrientation) state.getValue(BlockLever.FACING))) {
+			case EAST:
+				block.setBlockBounds(0.0F, 0.2F, 0.5F - f, f * 2.0F, 0.8F, 0.5F + f);
+				break;
+			case WEST:
+				block.setBlockBounds(1.0F - f * 2.0F, 0.2F, 0.5F - f, 1.0F, 0.8F, 0.5F + f);
+				break;
+			case SOUTH:
+				block.setBlockBounds(0.5F - f, 0.2F, 0.0F, 0.5F + f, 0.8F, f * 2.0F);
+				break;
+			case NORTH:
+				block.setBlockBounds(0.5F - f, 0.2F, 1.0F - f * 2.0F, 0.5F + f, 0.8F, 1.0F);
+				break;
+			case UP_Z:
+			case UP_X:
+				f = 0.25F;
+				block.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.6F, 0.5F + f);
+				break;
+			case DOWN_X:
+			case DOWN_Z:
+				f = 0.25F;
+				block.setBlockBounds(0.5F - f, 0.4F, 0.5F - f, 0.5F + f, 1.0F, 0.5F + f);
+			}
+		} else if (block instanceof BlockTrapDoor) { // trapdoor
+			((BlockTrapDoor) block).setBounds(state);
+		} else if (block instanceof BlockTripWireHook) { // tripwirehook
+			float f = 0.1875F;
+			switch ((EnumFacing) state.getValue(BlockTripWireHook.FACING)) {
+			case EAST:
+				block.setBlockBounds(0.0F, 0.2F, 0.5F - f, f * 2.0F, 0.8F, 0.5F + f);
+				break;
+			case WEST:
+				block.setBlockBounds(1.0F - f * 2.0F, 0.2F, 0.5F - f, 1.0F, 0.8F, 0.5F + f);
+				break;
+			case SOUTH:
+				block.setBlockBounds(0.5F - f, 0.2F, 0.0F, 0.5F + f, 0.8F, f * 2.0F);
+				break;
+			case NORTH:
+				block.setBlockBounds(0.5F - f, 0.2F, 1.0F - f * 2.0F, 0.5F + f, 0.8F, 1.0F);
+			default:
 			}
 		}
 		return block.getSelectedBoundingBox(world, pos);
