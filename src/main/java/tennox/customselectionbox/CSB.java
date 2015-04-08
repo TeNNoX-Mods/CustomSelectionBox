@@ -234,7 +234,8 @@ public class CSB {
 
 			return getBlockSpecificBB(world, player, pos, inUse, side, hitPos);
 		} else { // no block in hand
-			return Blocks.air.getSelectedBoundingBox(world, pos);
+			return null;
+			// return Blocks.air.getSelectedBoundingBox(world, pos);
 		}
 	}
 
