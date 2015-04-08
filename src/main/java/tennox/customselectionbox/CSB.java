@@ -5,7 +5,11 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockLadder;
+import net.minecraft.block.BlockSlab;
+import net.minecraft.block.BlockTorch;
 import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.DestroyBlockProgress;
 import net.minecraft.client.renderer.GlStateManager;
@@ -19,6 +23,7 @@ import net.minecraft.util.AxisAlignedBB;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -180,7 +185,9 @@ public class CSB {
 
 				// draw the blockplace indicator //
 				if (true) {
-					bb = getCurrentBlockBB(world, player, blockpos.add(mops.sideHit.getDirectionVec()), mops.sideHit);
+					bb = getCurrentBlockBB(world, player, blockpos.add(mops.sideHit.getDirectionVec()), mops.sideHit,
+							mops.hitVec.subtract(blockpos.getX(), blockpos.getY(), blockpos.getZ())); // the hitVec in mops is world-related, we need
+																										// block-related
 
 					if (bb != null) {
 						bb = bb.expand(0.0020000000949949026D, 0.0020000000949949026D, 0.0020000000949949026D).offset(-d0, -d1, -d2);
@@ -201,23 +208,67 @@ public class CSB {
 		}
 	}
 
-	private static AxisAlignedBB getCurrentBlockBB(World world, EntityPlayer player, BlockPos blockpos, EnumFacing side) {
+	private static AxisAlignedBB getCurrentBlockBB(World world, EntityPlayer player, BlockPos pos, EnumFacing side, Vec3 hitPos) {
 		ItemStack currentItem = player.inventory.getCurrentItem();
 
 		AxisAlignedBB bb;
 		if (currentItem != null && Block.getBlockFromItem(currentItem.getItem()) != null) {
 			Block inUse = Block.getBlockFromItem(currentItem.getItem());
 
-			if (!inUse.canPlaceBlockOnSide(world, blockpos, side)) {
-				return null;
-			}
-			
-			inUse.setBlockBoundsBasedOnState(world, blockpos);
-			bb = inUse.getSelectedBoundingBox(world, blockpos);
+			return getBlockSpecificBB(world, player, pos, inUse, side, hitPos);
 		} else { // no block in hand
-			bb = Blocks.air.getSelectedBoundingBox(world, blockpos);
+			return Blocks.air.getSelectedBoundingBox(world, pos);
 		}
-		return bb;
+	}
+
+	private static AxisAlignedBB getBlockSpecificBB(World world, EntityPlayer player, BlockPos pos, Block block, EnumFacing side, Vec3 hitPos) {
+		if (!block.canPlaceBlockOnSide(world, pos, side)) {
+			return null;
+		}
+
+		// block.setBlockBoundsBasedOnState(world, pos);
+
+		if (block instanceof BlockLadder) { // Ladder
+			IBlockState state = block.onBlockPlaced(world, pos, side, (float) hitPos.xCoord, (float) hitPos.yCoord, (float) hitPos.zCoord, 0, player);
+			float f = 0.125F;
+			switch (((EnumFacing) state.getValue(BlockLadder.FACING))) {
+			case NORTH:
+				block.setBlockBounds(0.0F, 0.0F, 1.0F - f, 1.0F, 1.0F, 1.0F);
+				break;
+			case SOUTH:
+				block.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, f);
+				break;
+			case WEST:
+				block.setBlockBounds(1.0F - f, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
+				break;
+			case EAST:
+			default:
+				block.setBlockBounds(0.0F, 0.0F, 0.0F, f, 1.0F, 1.0F);
+			}
+		} else if (block instanceof BlockTorch) { // Torch
+			IBlockState state = block.onBlockPlaced(world, pos, side, (float) hitPos.xCoord, (float) hitPos.yCoord, (float) hitPos.zCoord, 0, player);
+			float f = 0.15F;
+
+			if (side == EnumFacing.EAST) {
+				block.setBlockBounds(0.0F, 0.2F, 0.5F - f, f * 2.0F, 0.8F, 0.5F + f);
+			} else if (side == EnumFacing.WEST) {
+				block.setBlockBounds(1.0F - f * 2.0F, 0.2F, 0.5F - f, 1.0F, 0.8F, 0.5F + f);
+			} else if (side == EnumFacing.SOUTH) {
+				block.setBlockBounds(0.5F - f, 0.2F, 0.0F, 0.5F + f, 0.8F, f * 2.0F);
+			} else if (side == EnumFacing.NORTH) {
+				block.setBlockBounds(0.5F - f, 0.2F, 1.0F - f * 2.0F, 0.5F + f, 0.8F, 1.0F);
+			} else {
+				f = 0.1F;
+				block.setBlockBounds(0.5F - f, 0.0F, 0.5F - f, 0.5F + f, 0.6F, 0.5F + f);
+			}
+		} else if (block instanceof BlockSlab && !((BlockSlab) block).isDouble()) { // Slabs
+			IBlockState state = block.onBlockPlaced(world, pos, side, (float) hitPos.xCoord, (float) hitPos.yCoord, (float) hitPos.zCoord, 0, player);
+			if (state.getBlock() == block) {
+				boolean top = state.getValue(BlockSlab.HALF) == BlockSlab.EnumBlockHalf.TOP;
+				block.setBlockBounds(0.0F, top ? 0.5F : 0.0F, 0.0F, 1.0F, top ? 1.0F : 0.5F, 1.0F);
+			}
+		}
+		return block.getSelectedBoundingBox(world, pos);
 	}
 
 	private static float getBlockDamage(EntityPlayer player, MovingObjectPosition block) {
