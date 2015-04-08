@@ -54,13 +54,13 @@ public class CSB {
 	public static CSBCommonProxy proxy;
 	private static Configuration config;
 	public static Logger logger;
-	public static float red;
-	public static float green;
-	public static float blue;
-	public static float alpha;
-	public static float thickness;
-	public static float blinkalpha;
-	public static float blinkspeed;
+	public static CSBFloat red = new CSBFloat("Red", 255, 0f, 0f);
+	public static CSBFloat green = new CSBFloat("Green", 255, 0f, 0f);
+	public static CSBFloat blue = new CSBFloat("Blue", 255, 0f, 0f);
+	public static CSBFloat alpha = new CSBFloat("Alpha", 255, 0.4f, 1.0f);
+	public static CSBFloat thickness = new CSBFloat("Thickness", 7, 2f, 4f).setMinMax(0.1f, 7f);
+	public static CSBFloat blinkalpha = new CSBFloat("Blink Alpha", 255, 0f, 0.4f);
+	public static CSBFloat blinkspeed = new CSBFloat("Blink Speed", 100, 0f, 0.2f);
 	public static boolean diffButtonLoc;
 	public static boolean disableDepthBuffer;
 	public static int breakAnimation;
@@ -91,44 +91,53 @@ public class CSB {
 		int bra = config.get("general", "break_animation", 0).getInt();
 		config.save();
 
-		setRed(r / 255.0F);
-		setGreen(g / 255.0F);
-		setBlue(b / 255.0F);
-		setAlpha(a / 255.0F);
-		setThickness(t);
-		setBlinkAlpha(ba / 255.0F);
-		setBlinkSpeed(bs / 100.0F);
+		red.setFromInt(r);
+		green.setFromInt(g);
+		blue.setFromInt(b);
+		alpha.setFromInt(a);
+		thickness.setFromInt(t);
+		blinkalpha.setFromInt(ba);
+		blinkspeed.setFromInt(bs);
 		setBreakAnimation(bra);
 
-		logger.info("red=" + getRed() + " green=" + getGreen() + " blue=" + getBlue() + " alpha=" + getAlpha());
-		logger.info("thickness=" + getThickness() + " diffbuttonloc=" + diffButtonLoc);
-		logger.info("blinkalpha=" + getBlinkAlpha() + " blinkspeed=" + getBlinkSpeed());
+		logger.info("SAVED: red=" + red.get() + " green=" + green.get() + " blue=" + blue.get() + " alpha=" + alpha.get());
+		logger.info("SAVED: thickness=" + thickness.get() + " diffbuttonloc=" + diffButtonLoc + " blinkalpha=" + blinkalpha.get() + " blinkspeed=" + blinkspeed.get());
 	}
 
 	public static void save() {
 		config.load();
-		config.get("general", "red", 0).set(getRedInt());
-		config.get("general", "green", 0).set(getGreenInt());
-		config.get("general", "blue", 0).set(getBlueInt());
-		config.get("general", "alpha", 255).set(getAlphaInt());
-		config.get("general", "thickness", 4).set(getThicknessInt());
-		config.get("general", "blink_alpha", 100).set(getBlinkAlphaInt());
-		config.get("general", "blink_speed", 30).set(getBlinkSpeedInt());
+		config.get("general", "red", 0).set(red.getAsInt());
+		config.get("general", "green", 0).set(green.getAsInt());
+		config.get("general", "blue", 0).set(blue.getAsInt());
+		config.get("general", "alpha", 255).set(alpha.getAsInt());
+		config.get("general", "thickness", 4).set(thickness.getAsInt());
+		config.get("general", "blink_alpha", 100).set(blinkalpha.getAsInt());
+		config.get("general", "blink_speed", 30).set(blinkspeed.getAsInt());
 		config.get("general", "disable_depth", false).set(disableDepthBuffer);
 		config.get("general", "break_animation", 0).set(breakAnimation);
 		config.save();
-		logger.info("SAVED: red=" + getRed() + " green=" + getGreen() + " blue=" + getBlue() + " alpha=" + getAlpha());
-		logger.info("SAVED: thickness=" + getThickness() + " blinkalpha=" + getBlinkAlpha() + " blinkspeed=" + getBlinkSpeed());
+		logger.info("SAVED: red=" + red.get() + " green=" + green.get() + " blue=" + blue.get() + " alpha=" + alpha.get());
+		logger.info("SAVED: thickness=" + thickness.get() + " blinkalpha=" + blinkalpha.get() + " blinkspeed=" + blinkspeed.get());
 	}
 
 	public static void reset(boolean mc) {
-		setRed(0.0F);
-		setGreen(0.0F);
-		setBlue(0.0F);
-		setAlpha(mc ? 0.4F : 1.0F);
-		setThickness(mc ? 2.0F : 4.0F);
-		setBlinkAlpha(mc ? 0.0F : 0.390625F);
-		setBlinkSpeed(0.2F);
+		if (mc) {
+			red.mcDefault();
+			green.mcDefault();
+			blue.mcDefault();
+			alpha.mcDefault();
+			thickness.mcDefault();
+			blinkalpha.mcDefault();
+			blinkspeed.mcDefault();
+		} else {
+			red.csbDefault();
+			green.csbDefault();
+			blue.csbDefault();
+			alpha.csbDefault();
+			thickness.csbDefault();
+			blinkalpha.csbDefault();
+			blinkspeed.csbDefault();
+		}
 		disableDepthBuffer = false;
 		setBreakAnimation(0);
 		save();
@@ -162,7 +171,7 @@ public class CSB {
 			GlStateManager.enableBlend();
 			GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
 			GlStateManager.color(0.0F, 0.0F, 0.0F, 0.4F);
-			GL11.glLineWidth(getThickness());
+			GL11.glLineWidth(thickness.get());
 			GlStateManager.disableTexture2D();
 			GlStateManager.depthMask(false);
 			float f1 = 0.002F;
@@ -185,10 +194,10 @@ public class CSB {
 					bb = bb.expand(-breakProgress / 2, -breakProgress / 2, -breakProgress / 2);
 
 				// draw blinking block
-				drawBlinkingBlock(bb, (breakAnimation == ALPHA) ? breakProgress : getBlinkAlpha());
+				drawBlinkingBlock(bb, (breakAnimation == ALPHA) ? breakProgress : blinkalpha.get());
 
 				// set the color back to original and draw outline
-				GL11.glColor4f(getRed(), getGreen(), getBlue(), getAlpha());
+				GL11.glColor4f(red.get(), green.get(), blue.get(), alpha.get());
 				drawOutlinedBoundingBox(bb, -1);
 
 				// draw the blockplace indicator //
@@ -199,7 +208,7 @@ public class CSB {
 
 					if (bb != null) {
 						bb = bb.expand(0.0020000000949949026D, 0.0020000000949949026D, 0.0020000000949949026D).offset(-d0, -d1, -d2);
-						GL11.glColor4f(getRed(), getGreen(), getBlue(), getAlpha() / 3);
+						GL11.glColor4f(red.get(), green.get(), blue.get(), alpha.get() / 3);
 						drawOutlinedBoundingBox(bb, -1);
 					}
 				}
@@ -241,7 +250,7 @@ public class CSB {
 		} catch (Exception e) {
 			// if (!(block instanceof BlockSnow) && !(block instanceof BlockAnvil) && !(block instanceof BlockVine) && !(block instanceof BlockButton)
 			// && !(block instanceof BlockLever))
-//			 logger.catching(e);
+			// logger.catching(e);
 		}
 
 		if (block instanceof BlockLadder) { // Ladder
@@ -489,10 +498,10 @@ public class CSB {
 		Tessellator tessellator = Tessellator.getInstance();
 
 		if (alpha > 0.0F) {
-			if (getBlinkSpeed() > 0 && CSB.breakAnimation != ALPHA)
-				alpha *= (float) Math.abs(Math.sin(Minecraft.getSystemTime() / 100.0D * getBlinkSpeed()));
+			if (blinkspeed.get() > 0 && CSB.breakAnimation != ALPHA)
+				alpha *= (float) Math.abs(Math.sin(Minecraft.getSystemTime() / 100.0D * blinkspeed.get()));
 
-			GL11.glColor4f(getRed(), getGreen(), getBlue(), alpha);
+			GL11.glColor4f(red.get(), green.get(), blue.get(), alpha);
 			renderDown(par1AxisAlignedBB);
 			renderUp(par1AxisAlignedBB);
 			renderNorth(par1AxisAlignedBB);
@@ -581,103 +590,8 @@ public class CSB {
 		tessellator.draw();
 	}
 
-	public static void renderBlock() {
-	}
-
-	public static float getRed() {
-		return between(red, 0.0F, 1.0F);
-	}
-
-	public static float getGreen() {
-		return between(green, 0.0F, 1.0F);
-	}
-
-	public static float getBlue() {
-		return between(blue, 0.0F, 1.0F);
-	}
-
-	public static float getAlpha() {
-		return between(alpha, 0.0F, 1.0F);
-	}
-
-	public static float getThickness() {
-		return between(thickness, 0.1F, 7.0F);
-	}
-
-	public static float getBlinkAlpha() {
-		return between(blinkalpha, 0.0F, 1.0F);
-	}
-
-	public static float getBlinkSpeed() {
-		return between(blinkspeed, 0.0F, 1.0F);
-	}
-
-	public static void setRed(float r) {
-		red = between(r, 0.0F, 1.0F);
-	}
-
-	public static void setGreen(float g) {
-		green = between(g, 0.0F, 1.0F);
-	}
-
-	public static void setBlue(float b) {
-		blue = between(b, 0.0F, 1.0F);
-	}
-
-	public static void setAlpha(float a) {
-		alpha = between(a, 0.0F, 1.0F);
-	}
-
-	public static void setThickness(float t) {
-		thickness = between(t, 0.1F, 7.0F);
-	}
-
-	public static void setBlinkAlpha(float ba) {
-		blinkalpha = between(ba, 0.0F, 1.0F);
-	}
-
-	public static void setBlinkSpeed(float s) {
-		blinkspeed = between(s, 0.0F, 1.0F);
-	}
-
 	public static void setBreakAnimation(int index) {
 		breakAnimation = between(index, 0, LASTANIMATION_INDEX);
-	}
-
-	public static int getRedInt() {
-		return Math.round(getRed() * 256.0F);
-	}
-
-	public static int getGreenInt() {
-		return Math.round(getGreen() * 256.0F);
-	}
-
-	public static int getBlueInt() {
-		return Math.round(getBlue() * 256.0F);
-	}
-
-	public static int getAlphaInt() {
-		return Math.round(getAlpha() * 256.0F);
-	}
-
-	public static int getThicknessInt() {
-		return Math.round(getThickness());
-	}
-
-	public static int getBlinkAlphaInt() {
-		return Math.round(getBlinkAlpha() * 256.0F);
-	}
-
-	public static int getBlinkSpeedInt() {
-		return Math.round(getBlinkSpeed() * 100.0F);
-	}
-
-	private static float between(float i, float x, float y) {
-		if (i < x)
-			i = x;
-		if (i > y)
-			i = y;
-		return i;
 	}
 
 	private static int between(int i, int x, int y) {
