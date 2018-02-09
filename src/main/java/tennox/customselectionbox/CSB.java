@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
@@ -32,10 +33,10 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.opengl.GL11;
 
-@Mod(modid = CSB.MODID, version = CSB.VERSION)
+@Mod(modid = CSB.MODID, version = CSB.VERSION, acceptedMinecraftVersions = "[1.8.8,1.8.9]")
 public class CSB {
 	public static final String MODID = "TeNNoX_CustomSelectionBox";
-	public static final String VERSION = "1.4";
+	public static final String VERSION = "2.0";
 
 	@SidedProxy(clientSide = "tennox.customselectionbox.CSBClientProxy", serverSide = "tennox.customselectionbox.CSBCommonProxy")
 	public static CSBCommonProxy proxy;
@@ -215,44 +216,44 @@ public class CSB {
 	private static void drawOutlinedBoundingBox(AxisAlignedBB boundingBox, int color) {
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
-		worldrenderer.startDrawing(3);
+		worldrenderer.begin(3, DefaultVertexFormats.POSITION);
 
 		if (color != -1) {
-			worldrenderer.setColorOpaque_I(color);
+			worldrenderer.putColor4(color);
 		}
 
-		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.minZ);
-		worldrenderer.addVertex(boundingBox.maxX, boundingBox.minY, boundingBox.minZ);
-		worldrenderer.addVertex(boundingBox.maxX, boundingBox.minY, boundingBox.maxZ);
-		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.maxZ);
-		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.minZ);
+		worldrenderer.pos(boundingBox.minX,boundingBox.minY,boundingBox.minZ).endVertex();
+		worldrenderer.pos(boundingBox.maxX,boundingBox.minY,boundingBox.minZ).endVertex();
+		worldrenderer.pos(boundingBox.maxX,boundingBox.minY,boundingBox.maxZ).endVertex();
+		worldrenderer.pos(boundingBox.minX,boundingBox.minY,boundingBox.maxZ).endVertex();
+		worldrenderer.pos(boundingBox.minX,boundingBox.minY,boundingBox.minZ).endVertex();
 		tessellator.draw();
-		worldrenderer.startDrawing(3);
+		worldrenderer.begin(3, DefaultVertexFormats.POSITION);
 
 		if (color != -1) {
-			worldrenderer.setColorOpaque_I(color);
+			worldrenderer.putColor4(color);
 		}
 
-		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.minZ);
-		worldrenderer.addVertex(boundingBox.maxX, boundingBox.maxY, boundingBox.minZ);
-		worldrenderer.addVertex(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ);
-		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.maxZ);
-		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.minZ);
+		worldrenderer.pos(boundingBox.minX,boundingBox.maxY,boundingBox.minZ).endVertex();
+		worldrenderer.pos(boundingBox.maxX,boundingBox.maxY,boundingBox.minZ).endVertex();
+		worldrenderer.pos(boundingBox.maxX,boundingBox.maxY,boundingBox.maxZ).endVertex();
+		worldrenderer.pos(boundingBox.minX,boundingBox.maxY,boundingBox.maxZ).endVertex();
+		worldrenderer.pos(boundingBox.minX,boundingBox.maxY,boundingBox.minZ).endVertex();
 		tessellator.draw();
-		worldrenderer.startDrawing(1);
+		worldrenderer.begin(1, DefaultVertexFormats.POSITION);
 
 		if (color != -1) {
-			worldrenderer.setColorOpaque_I(color);
+			worldrenderer.putColor4(color);
 		}
 
-		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.minZ);
-		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.minZ);
-		worldrenderer.addVertex(boundingBox.maxX, boundingBox.minY, boundingBox.minZ);
-		worldrenderer.addVertex(boundingBox.maxX, boundingBox.maxY, boundingBox.minZ);
-		worldrenderer.addVertex(boundingBox.maxX, boundingBox.minY, boundingBox.maxZ);
-		worldrenderer.addVertex(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ);
-		worldrenderer.addVertex(boundingBox.minX, boundingBox.minY, boundingBox.maxZ);
-		worldrenderer.addVertex(boundingBox.minX, boundingBox.maxY, boundingBox.maxZ);
+		worldrenderer.pos(boundingBox.minX,boundingBox.minY,boundingBox.minZ).endVertex();
+		worldrenderer.pos(boundingBox.minX,boundingBox.maxY,boundingBox.minZ).endVertex();
+		worldrenderer.pos(boundingBox.maxX,boundingBox.minY,boundingBox.minZ).endVertex();
+		worldrenderer.pos(boundingBox.maxX,boundingBox.maxY,boundingBox.minZ).endVertex();
+		worldrenderer.pos(boundingBox.maxX,boundingBox.minY,boundingBox.maxZ).endVertex();
+		worldrenderer.pos(boundingBox.maxX,boundingBox.maxY,boundingBox.maxZ).endVertex();
+		worldrenderer.pos(boundingBox.minX,boundingBox.minY,boundingBox.maxZ).endVertex();
+		worldrenderer.pos(boundingBox.minX,boundingBox.maxY,boundingBox.maxZ).endVertex();
 		tessellator.draw();
 	}
 
@@ -277,12 +278,12 @@ public class CSB {
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		worldrenderer.startDrawingQuads();
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.minY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
 		tessellator.draw();
 	}
 
@@ -290,12 +291,12 @@ public class CSB {
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		worldrenderer.startDrawingQuads();
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
+		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.minZ).endVertex();
 
 		tessellator.draw();
 	}
@@ -304,12 +305,12 @@ public class CSB {
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		worldrenderer.startDrawingQuads();
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
 		tessellator.draw();
 	}
 
@@ -317,12 +318,12 @@ public class CSB {
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		worldrenderer.startDrawingQuads();
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
+		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.minY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.maxZ).endVertex();
 		tessellator.draw();
 	}
 
@@ -330,12 +331,12 @@ public class CSB {
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		worldrenderer.startDrawingQuads();
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.minX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
 		tessellator.draw();
 	}
 
@@ -343,12 +344,12 @@ public class CSB {
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 
-		worldrenderer.startDrawingQuads();
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.minZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.maxY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.maxZ);
-		worldrenderer.addVertex(par1AxisAlignedBB.maxX, par1AxisAlignedBB.minY, par1AxisAlignedBB.minZ);
+		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.minZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.minY,par1AxisAlignedBB.maxZ).endVertex();
+		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
 		tessellator.draw();
 	}
 

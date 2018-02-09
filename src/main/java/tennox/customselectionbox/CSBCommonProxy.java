@@ -1,6 +1,8 @@
 package tennox.customselectionbox;
 
-public class CSBCommonProxy {
-	public void registerTickHandler() {
-	}
+public class CSBCommonProxy
+{
+  public CSBCommonProxy() {}
+  
+  public void registerTickHandler() {}
 }
