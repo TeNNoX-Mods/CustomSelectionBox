@@ -1,14 +1,14 @@
 [
 {
   "modid": "TeNNoX_CustomSelectionBox",
-  "name": "Custom Select Box Mod",
-  "description": "Custom Select Box Mod by TeNNoX, ported by Danielshe",
+  "name": "CustomSelectionBox",
+  "description": "Fancy Selection boxes!",
   "version": "${version}",
   "mcversion": "${mcversion}",
-  "url": "",
+  "url": "www.minecraftforum.net/topic/1799471-/",
   "updateUrl": "",
-  "authorList": ["TeNNoX","Danielshe"],
-  "credits": "Thank you for TeNNoX for the orginal code for 1.8 and Danielshe for 1.8.9 porting",
+  "authors": ["TeNNoX"],
+  "credits": "",
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
