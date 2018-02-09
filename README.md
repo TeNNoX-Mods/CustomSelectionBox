@@ -1,4 +1,4 @@
-# TeNNoX' CustomSelectionBox Fort
+# TeNNoX' CustomSelectionBox Fork
 
 This supports 1.8.8 - 1.8.9
 Download complied jar file here:
