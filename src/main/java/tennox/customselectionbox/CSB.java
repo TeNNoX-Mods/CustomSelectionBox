@@ -4,6 +4,9 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
+import org.apache.logging.log4j.Logger;
+import org.lwjgl.opengl.GL11;
+
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
@@ -11,15 +14,13 @@ import net.minecraft.client.renderer.DestroyBlockProgress;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderGlobal;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.WorldRenderer;
+import net.minecraft.client.renderer.VertexBuffer;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.AxisAlignedBB;
-import net.minecraft.util.BlockPos;
-import net.minecraft.util.MovingObjectPosition;
-import net.minecraft.util.MovingObjectPosition.MovingObjectType;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -30,13 +31,10 @@ import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-import org.apache.logging.log4j.Logger;
-import org.lwjgl.opengl.GL11;
-
-@Mod(modid = CSB.MODID, version = CSB.VERSION, acceptedMinecraftVersions = "[1.8.8,1.8.9]")
+@Mod(modid = CSB.MODID, version = CSB.VERSION, acceptedMinecraftVersions = "[1.9, 1.10.2]")
 public class CSB {
 	public static final String MODID = "TeNNoX_CustomSelectionBox";
-	public static final String VERSION = "2.0";
+	public static final String VERSION = "2.0.1";
 
 	@SidedProxy(clientSide = "tennox.customselectionbox.CSBClientProxy", serverSide = "tennox.customselectionbox.CSBCommonProxy")
 	public static CSBCommonProxy proxy;
@@ -130,14 +128,15 @@ public class CSB {
 
 	@SubscribeEvent
 	public void onDrawBlockSelectionBox(DrawBlockHighlightEvent e) {
-		drawSelectionBox(e.player, e.target, e.subID, e.currentItem, e.partialTicks);
+		drawSelectionBox(e.getPlayer(), e.getTarget(), e.getSubID(), e.getPlayer().getHeldItemMainhand(), e.getPartialTicks());
 		e.setCanceled(true);
 	}
 
 	// see RenderGlobal.drawSelectionBox
-	public static void drawSelectionBox(EntityPlayer player, MovingObjectPosition mops, int subID, ItemStack par4ItemStack, float partialTicks) {
+	public static void drawSelectionBox(EntityPlayer player, RayTraceResult mops, int subID, ItemStack itemStack, float partialTicks) {
 		World world = player.worldObj;
-		if (subID == 0 && mops.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+		if (subID == 0 && mops.typeOfHit == RayTraceResult.Type.BLOCK) {
+			
 			// get the blockdamage progess
 			float breakProgress = getBlockDamage(player, mops);
 
@@ -155,16 +154,15 @@ public class CSB {
 			float f1 = 0.002F;
 			BlockPos blockpos = mops.getBlockPos();
 			Block block = world.getBlockState(blockpos).getBlock();
-
-			if (block.getMaterial() != Material.air && world.getWorldBorder().contains(blockpos)) {
-				block.setBlockBoundsBasedOnState(world, blockpos);
+			
+			if (block.getMaterial(world.getBlockState(blockpos)) != Material.air && world.getWorldBorder().contains(blockpos)) {
+				//block.setBlockBoundsBasedOnState(world, blockpos);
 				double d0 = player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) partialTicks;
 				double d1 = player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) partialTicks;
 				double d2 = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) partialTicks;
 
-				AxisAlignedBB bb = block.getSelectedBoundingBox(world, blockpos).expand(0.0020000000949949026D, 0.0020000000949949026D, 0.0020000000949949026D)
-						.offset(-d0, -d1, -d2);
-
+				AxisAlignedBB bb = null;
+				bb = world.getBlockState(blockpos).getCollisionBoundingBox(world, blockpos).expand(0.0020000000949949026D, 0.0020000000949949026D, 0.0020000000949949026D).offset(-d0, -d1, -d2);
 				// modify BB
 				if (breakAnimation == DOWN)
 					bb = bb.expand(0f, -breakProgress / 2, 0f).offset(0f, -breakProgress / 2, 0f);
@@ -190,7 +188,7 @@ public class CSB {
 		}
 	}
 
-	private static float getBlockDamage(EntityPlayer player, MovingObjectPosition block) {
+	private static float getBlockDamage(EntityPlayer player, RayTraceResult block) {
 		try {
 			Field f;
 			try {
@@ -215,7 +213,7 @@ public class CSB {
 
 	private static void drawOutlinedBoundingBox(AxisAlignedBB boundingBox, int color) {
 		Tessellator tessellator = Tessellator.getInstance();
-		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+		VertexBuffer worldrenderer = tessellator.getBuffer();
 		worldrenderer.begin(3, DefaultVertexFormats.POSITION);
 
 		if (color != -1) {
@@ -276,7 +274,7 @@ public class CSB {
 
 	public static void renderUp(AxisAlignedBB par1AxisAlignedBB) {
 		Tessellator tessellator = Tessellator.getInstance();
-		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+		VertexBuffer worldrenderer = tessellator.getBuffer();
 
 		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
 		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
@@ -289,7 +287,7 @@ public class CSB {
 
 	public static void renderDown(AxisAlignedBB par1AxisAlignedBB) {
 		Tessellator tessellator = Tessellator.getInstance();
-		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+		VertexBuffer worldrenderer = tessellator.getBuffer();
 
 		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
 		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.maxY,par1AxisAlignedBB.minZ).endVertex();
@@ -303,7 +301,7 @@ public class CSB {
 
 	public static void renderNorth(AxisAlignedBB par1AxisAlignedBB) {
 		Tessellator tessellator = Tessellator.getInstance();
-		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+		VertexBuffer worldrenderer = tessellator.getBuffer();
 
 		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
 		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
@@ -316,7 +314,7 @@ public class CSB {
 
 	public static void renderSouth(AxisAlignedBB par1AxisAlignedBB) {
 		Tessellator tessellator = Tessellator.getInstance();
-		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+		VertexBuffer worldrenderer = tessellator.getBuffer();
 
 		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
 		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.maxZ).endVertex();
@@ -329,7 +327,7 @@ public class CSB {
 
 	public static void renderWest(AxisAlignedBB par1AxisAlignedBB) {
 		Tessellator tessellator = Tessellator.getInstance();
-		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+		VertexBuffer worldrenderer = tessellator.getBuffer();
 
 		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
 		worldrenderer.pos(par1AxisAlignedBB.minX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
@@ -342,7 +340,7 @@ public class CSB {
 
 	public static void renderEast(AxisAlignedBB par1AxisAlignedBB) {
 		Tessellator tessellator = Tessellator.getInstance();
-		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
+		VertexBuffer worldrenderer = tessellator.getBuffer();
 
 		worldrenderer.begin(GL11.GL_QUADS,DefaultVertexFormats.POSITION);
 		worldrenderer.pos(par1AxisAlignedBB.maxX,par1AxisAlignedBB.minY,par1AxisAlignedBB.minZ).endVertex();
