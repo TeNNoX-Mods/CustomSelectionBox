@@ -13,3 +13,5 @@ This supports 1.8.8 - 1.12.2 <br />
 [v.2.1.2](https://github.com/shedaniel/CustomSelectionBox-Fork/releases/download/v.2.1.2/CustomSelectionBox-2.1.2.jar) (Chroma Release)
 #### 1.12.x
 [v.2.1.3](https://github.com/shedaniel/CustomSelectionBox-Fork/releases/download/v.2.1.3/CustomSelectionBox-2.1.3.jar) (Chroma Release)
+#### 1.13.2 ([Use Rift 1.13.2](https://github.com/Chocohead/Rift))
+[v.2.1.4](https://github.com/shedaniel/CustomSelectionBox-Fork/releases/download/v.2.1.4/CustomSelectionBox-2.1.4.1.13.2.jar)
