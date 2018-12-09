@@ -1,6 +1,6 @@
 # TeNNoX' CustomSelectionBox Fork
 
-This supports 1.8.8 - 1.12.2 <br />
+This supports 1.8.8 - 1.12.2, 1.13.2 <br />
 
 ## Downloads
 #### 1.8.8 - 1.8.9
